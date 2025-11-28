@@ -57,6 +57,7 @@ import {
   Subscription,
   SubscriptionOperator,
   SubscriptionReport,
+  VMwareNodePoolTemplate,
 } from './resources'
 import { AccessControl } from './resources/access-control'
 let atomArrayKey = 0
@@ -124,6 +125,7 @@ export const hostedClustersState = AtomArray<HostedClusterK8sResource>()
 export const nodePoolsState = AtomArray<NodePoolK8sResource>()
 export const agentMachinesState = AtomArray<AgentMachineK8sResource>()
 export const accessControlState = AtomArray<AccessControl>()
+export const vmwareNodePoolTemplatesState = AtomArray<VMwareNodePoolTemplate>()
 
 export const settingsState = atom<Settings>({ key: 'settings', default: {} })
 

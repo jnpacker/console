@@ -25,6 +25,9 @@ import {
   Stack,
   StackItem,
   SelectOption,
+  Progress,
+  ProgressVariant,
+  ProgressMeasureLocation,
 } from '@patternfly/react-core'
 import {
   ClusterImageSetK8sResource,
@@ -33,7 +36,11 @@ import {
   HostedClusterK8sResource,
   OpenshiftVersionOptionType,
 } from '@openshift-assisted/ui-lib/cim'
-import { NodePool, NodePoolApiVersion, NodePoolKind } from '../../../../../resources'
+import {
+  NodePool,
+  NodePoolApiVersion,
+  NodePoolKind,
+} from '../../../../../resources'
 import {
   createResource,
   HypershiftCloudPlatformType,
@@ -43,6 +50,7 @@ import {
   resultsSettled,
 } from '../../../../../resources/utils'
 import { Fragment, useEffect, useState } from 'react'
+import { useRecoilValue, useSharedAtoms } from '../../../../../shared-recoil'
 
 export type ListItems = {
   key: string
@@ -58,11 +66,43 @@ export function NodePoolForm(props: {
   nodepool?: NodePool
 }): JSX.Element {
   const { t } = useTranslation()
+  const { vmwareNodePoolTemplatesState } = useSharedAtoms()
+  const vmwareTemplates = useRecoilValue(vmwareNodePoolTemplatesState)
 
   const [imageOptions, setNodepoolImageOptions] = useState<OpenshiftVersionOptionType[]>()
   const [name, setName] = useState<string>()
   const [selectedImage, setSelectedImage] = useState<string>()
   const [replicas, setReplicas] = useState<number>(props.nodepool?.spec.replicas ? props.nodepool.spec.replicas : 1)
+
+  // Find VMwareNodePoolTemplate for this nodepool
+  const vmwareTemplate = vmwareTemplates.find(
+    (template) =>
+      template.spec.nodePoolRef.name === (props.nodepool?.metadata.name || name) &&
+      template.metadata.namespace === props.hostedCluster.metadata?.namespace
+  )
+
+  // Debug logging to help troubleshoot VMware template detection
+  useEffect(() => {
+    console.log('========== NodePoolForm Debug ==========')
+    console.log('isEdit mode:', !!props.nodepool)
+    console.log('NodePool name:', props.nodepool?.metadata.name || name || 'NOT SET')
+    console.log('HostedCluster namespace:', props.hostedCluster.metadata?.namespace)
+    console.log('HostedCluster name:', props.hostedCluster.metadata?.name)
+    console.log('Available VMware templates:', vmwareTemplates.length)
+    if (vmwareTemplates.length > 0) {
+      console.log('VMware templates:', vmwareTemplates.map(t => ({
+        name: t.metadata.name,
+        namespace: t.metadata.namespace,
+        nodePoolRef: t.spec.nodePoolRef.name
+      })))
+    }
+    console.log('Found VMware template:', vmwareTemplate?.metadata.name || 'NONE')
+    console.log('Template has resource utilization:', !!vmwareTemplate?.status?.resourceUtilization)
+    if (vmwareTemplate?.status?.resourceUtilization) {
+      console.log('Resource utilization data:', vmwareTemplate.status.resourceUtilization)
+    }
+    console.log('========================================')
+  }, [props.nodepool?.metadata.name, name, props.hostedCluster.metadata?.namespace, props.hostedCluster.metadata?.name, vmwareTemplates, vmwareTemplate])
 
   // AWS specific properties
   const [awsInstanceProfile, setAwsInstanceProfile] = useState<string>()
@@ -141,11 +181,108 @@ export function NodePoolForm(props: {
               setReplicas(newReplicas)
             }
           }}
-          onPlus={() => setReplicas(replicas + 1)}
+          onPlus={() => {
+            // Calculate the max allowed replicas based on VMwareTemplate limits
+            let maxAllowed = replicas + 1
+            if (vmwareTemplate) {
+              const estimatedCapacity = vmwareTemplate.status?.resourceUtilization?.estimatedVMCapacity
+              const maxVMs = vmwareTemplate.spec.vmTemplate.resourceLimits?.maxVMs
+              const currentVMs = vmwareTemplate.status?.currentReplicas || 0
+
+              // Limit based on maxVMs (hard limit)
+              if (maxVMs !== undefined) {
+                const remainingCapacity = maxVMs - currentVMs
+                maxAllowed = Math.min(maxAllowed, replicas + remainingCapacity)
+              }
+
+              // Limit based on estimated capacity
+              if (estimatedCapacity !== undefined && estimatedCapacity > 0) {
+                maxAllowed = Math.min(maxAllowed, replicas + estimatedCapacity)
+              }
+            }
+            setReplicas(maxAllowed)
+          }}
           required
         />
       ),
     },
+    ...(vmwareTemplate
+      ? {
+          vmwareResourceIndicators: {
+            key: t('VMware Resource Availability'),
+            value: undefined,
+            edit: vmwareTemplate.status?.resourceUtilization ? (
+              <Stack hasGutter>
+                <StackItem>
+                  <div>
+                    <strong>{t('Storage')}</strong>
+                    <Progress
+                      value={vmwareTemplate.status.resourceUtilization.datastore.percentUsed}
+                      title={`${vmwareTemplate.status.resourceUtilization.datastore.freeSpaceGB} GB Free / ${vmwareTemplate.status.resourceUtilization.datastore.capacityGB} GB Total`}
+                      variant={
+                        vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 90
+                          ? ProgressVariant.danger
+                          : vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 75
+                            ? ProgressVariant.warning
+                            : undefined
+                      }
+                      measureLocation={ProgressMeasureLocation.outside}
+                    />
+                  </div>
+                </StackItem>
+                <StackItem>
+                  <div>
+                    <strong>{t('CPU')}</strong>
+                    <Progress
+                      value={vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed}
+                      title={`${vmwareTemplate.status.resourceUtilization.compute.cpuAvailableMhz} MHz Available / ${vmwareTemplate.status.resourceUtilization.compute.cpuTotalMhz} MHz Total`}
+                      variant={
+                        vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 90
+                          ? ProgressVariant.danger
+                          : vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 75
+                            ? ProgressVariant.warning
+                            : undefined
+                      }
+                      measureLocation={ProgressMeasureLocation.outside}
+                    />
+                  </div>
+                </StackItem>
+                <StackItem>
+                  <div>
+                    <strong>{t('Memory')}</strong>
+                    <Progress
+                      value={vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed}
+                      title={`${vmwareTemplate.status.resourceUtilization.compute.memoryAvailableMb} MB Available / ${vmwareTemplate.status.resourceUtilization.compute.memoryTotalMb} MB Total`}
+                      variant={
+                        vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 90
+                          ? ProgressVariant.danger
+                          : vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 75
+                            ? ProgressVariant.warning
+                            : undefined
+                      }
+                      measureLocation={ProgressMeasureLocation.outside}
+                    />
+                  </div>
+                </StackItem>
+                <StackItem>
+                  <div>
+                    <strong>{t('Estimated VM Capacity')}</strong>:{' '}
+                    {vmwareTemplate.status.resourceUtilization.estimatedVMCapacity}
+                    {vmwareTemplate.spec.vmTemplate.resourceLimits?.maxVMs !== undefined &&
+                      ` / ${vmwareTemplate.spec.vmTemplate.resourceLimits.maxVMs} Max VMs`}
+                  </div>
+                </StackItem>
+              </Stack>
+            ) : (
+              <div style={{ fontStyle: 'italic', color: '#6a6e73' }}>
+                {t(
+                  'VMware resource utilization data is not yet available. The VMware controller will populate this information shortly.'
+                )}
+              </div>
+            ),
+          },
+        }
+      : {}),
   }
 
   const nodepoolAWSProperties = {
@@ -347,6 +484,11 @@ export function NodePoolForm(props: {
     nodepoolCommonProperties.nodepoolOpenshiftVersion,
     nodepoolCommonProperties.nodepoolReplicas,
   ]
+
+  // Add VMware resource indicators if available (for both create and edit modes)
+  if (nodepoolCommonProperties.vmwareResourceIndicators) {
+    nodepoolItems.push(nodepoolCommonProperties.vmwareResourceIndicators)
+  }
 
   if (!isEdit) {
     switch (props.hostedCluster.spec.platform.type) {

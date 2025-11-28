@@ -1,6 +1,6 @@
 /* Copyright Contributors to the Open Cluster Management project */
 import get from 'lodash/get'
-import { Fragment, ReactNode, useContext, useEffect, useMemo, useState } from 'react'
+import { Fragment, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { SetterOrUpdater, useRecoilValue, useSetRecoilState } from 'recoil'
 import { tokenExpired } from '../logout'
@@ -108,6 +108,8 @@ import {
   SubscriptionOperatorKind,
   SubscriptionReportApiVersion,
   SubscriptionReportKind,
+  VMwareNodePoolTemplateApiVersion,
+  VMwareNodePoolTemplateKind,
 } from '../resources'
 import { getBackendUrl, getRequest } from '../resources/utils'
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
@@ -171,6 +173,7 @@ import {
   subscriptionOperatorsState,
   subscriptionReportsState,
   subscriptionsState,
+  vmwareNodePoolTemplatesState,
   WatchEvent,
 } from '../atoms'
 import { PluginDataContext } from '../lib/PluginDataContext'
@@ -235,6 +238,7 @@ export function LoadData(props: { children?: ReactNode }) {
   const setHostedClustersState = useSetRecoilState(hostedClustersState)
   const setNodePoolsState = useSetRecoilState(nodePoolsState)
   const setAgentMachinesState = useSetRecoilState(agentMachinesState)
+  const setVMwareNodePoolTemplatesState = useSetRecoilState(vmwareNodePoolTemplatesState)
   const setIsFineGrainedRbacEnabled = useSetRecoilState(isFineGrainedRbacEnabledState)
   const setIsGlobalHub = useSetRecoilState(isGlobalHubState)
   const setlocalHubName = useSetRecoilState(localHubNameState)
@@ -336,6 +340,7 @@ export function LoadData(props: { children?: ReactNode }) {
     addSetter(HostedClusterApiVersion, HostedClusterKind, setHostedClustersState)
     addSetter(NodePoolApiVersion, NodePoolKind, setNodePoolsState)
     addSetter(AgentMachineApiVersion, AgentMachineKind, setAgentMachinesState)
+    addSetter(VMwareNodePoolTemplateApiVersion, VMwareNodePoolTemplateKind, setVMwareNodePoolTemplatesState)
     addSetter(AccessControlApiVersion, AccessControlKind, setAccessControls)
 
     return { setters, mappers, caches }
@@ -392,6 +397,7 @@ export function LoadData(props: { children?: ReactNode }) {
     setHostedClustersState,
     setNodePoolsState,
     setAgentMachinesState,
+    setVMwareNodePoolTemplatesState,
     setAccessControls,
   ])
 
