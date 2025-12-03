@@ -4,7 +4,6 @@ import * as React from 'react';
 import { Button, Label, Popover, Stack, StackItem } from '@patternfly/react-core';
 import { PlusCircleIcon } from '@patternfly/react-icons/dist/js/icons/plus-circle-icon';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Link } from 'react-router-dom';
 import classnames from 'classnames';
 
 import {
@@ -194,13 +193,7 @@ const NodePoolsTable = ({
                           <AgentStatus agent={agent} isDay2 />
                         </Td>
                         <Td>
-                          <Link
-                            to={`/multicloud/infrastructure/environments/details/${
-                              agent.metadata?.namespace || ''
-                            }/${agent.metadata?.labels?.[INFRAENV_AGENTINSTALL_LABEL_KEY] || ''}`}
-                          >
-                            {agent.metadata?.labels?.[INFRAENV_AGENTINSTALL_LABEL_KEY]}
-                          </Link>
+                          {agent.metadata?.labels?.[INFRAENV_AGENTINSTALL_LABEL_KEY] || '-'}
                         </Td>
                         <Td>{cores.title}</Td>
                         <Td>{memory.title}</Td>

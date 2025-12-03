@@ -8,11 +8,6 @@ import {
   Form,
   Grid,
   GridItem,
-  Progress,
-  ProgressVariant,
-  ProgressMeasureLocation,
-  Stack,
-  StackItem,
 } from '@patternfly/react-core';
 import { useFormikContext } from 'formik';
 
@@ -88,80 +83,6 @@ const NodePoolForm = ({ agents, nodePool, hostedCluster, agentMachines, vmwareTe
             currentReplicas={nodePool?.spec.replicas}
           />
         </GridItem>
-        {vmwareTemplate && vmwareTemplate.status?.resourceUtilization && (
-          <GridItem>
-            <Stack hasGutter style={{ padding: '16px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-              <StackItem>
-                <div style={{ fontWeight: 600, marginBottom: '8px' }}>{t('VMware Capacity')}</div>
-              </StackItem>
-              <StackItem>
-                <div>
-                  <strong>{t('Storage')}</strong>
-                  <Progress
-                    value={vmwareTemplate.status.resourceUtilization.datastore.percentUsed}
-                    title={`${vmwareTemplate.status.resourceUtilization.datastore.freeSpaceGB} GB Free / ${vmwareTemplate.status.resourceUtilization.datastore.capacityGB} GB Total`}
-                    variant={
-                      vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 90
-                        ? ProgressVariant.danger
-                        : vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 75
-                          ? ProgressVariant.warning
-                          : undefined
-                    }
-                    measureLocation={ProgressMeasureLocation.outside}
-                  />
-                </div>
-              </StackItem>
-              <StackItem>
-                <div>
-                  <strong>{t('CPU')}</strong>
-                  <Progress
-                    value={vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed}
-                    title={`${vmwareTemplate.status.resourceUtilization.compute.cpuAvailableMhz} MHz Available / ${vmwareTemplate.status.resourceUtilization.compute.cpuTotalMhz} MHz Total`}
-                    variant={
-                      vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 90
-                        ? ProgressVariant.danger
-                        : vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 75
-                          ? ProgressVariant.warning
-                          : undefined
-                    }
-                    measureLocation={ProgressMeasureLocation.outside}
-                  />
-                </div>
-              </StackItem>
-              <StackItem>
-                <div>
-                  <strong>{t('Memory')}</strong>
-                  <Progress
-                    value={vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed}
-                    title={`${vmwareTemplate.status.resourceUtilization.compute.memoryAvailableMb} MB Available / ${vmwareTemplate.status.resourceUtilization.compute.memoryTotalMb} MB Total`}
-                    variant={
-                      vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 90
-                        ? ProgressVariant.danger
-                        : vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 75
-                          ? ProgressVariant.warning
-                          : undefined
-                    }
-                    measureLocation={ProgressMeasureLocation.outside}
-                  />
-                </div>
-              </StackItem>
-              <StackItem>
-                <div>
-                  <strong>{t('Estimated VM Capacity')}</strong>: {vmwareTemplate.status.resourceUtilization.estimatedVMCapacity}
-                  {vmwareTemplate.spec?.vmTemplate?.resourceLimits?.maxVMs !== undefined &&
-                    ` / ${vmwareTemplate.spec.vmTemplate.resourceLimits.maxVMs} Max VMs`}
-                </div>
-              </StackItem>
-            </Stack>
-          </GridItem>
-        )}
-        {vmwareTemplate && !vmwareTemplate.status?.resourceUtilization && (
-          <GridItem>
-            <div style={{ fontStyle: 'italic', color: '#6a6e73', padding: '16px' }}>
-              {t('VMware resource utilization data is not yet available. The VMware controller will populate this information shortly.')}
-            </div>
-          </GridItem>
-        )}
         <GridItem>
           <DescriptionList isHorizontal>
             <DescriptionListGroup>

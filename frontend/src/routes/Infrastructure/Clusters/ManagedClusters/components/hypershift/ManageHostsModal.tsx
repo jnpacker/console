@@ -6,6 +6,9 @@ import {
   ModalBoxBody,
   ModalBoxFooter,
   ModalVariant,
+  Progress,
+  ProgressVariant,
+  ProgressMeasureLocation,
   Spinner,
   Stack,
   StackItem,
@@ -156,6 +159,75 @@ const ManageHostsModal = ({
                     vmwareTemplate={vmwareTemplate}
                   />
                 </StackItem>
+                {vmwareTemplate && vmwareTemplate.status?.resourceUtilization && (
+                  <StackItem>
+                    <div style={{ padding: '16px', border: '1px solid #d2d2d2', borderRadius: '4px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px' }}>
+                        {t('Available VMware Capacity')}
+                      </div>
+                      <Stack hasGutter>
+                        <StackItem>
+                          <div style={{ marginBottom: '4px', fontSize: '13px', fontWeight: 500 }}>{t('Storage')}</div>
+                          <Progress
+                            value={vmwareTemplate.status.resourceUtilization.datastore.percentUsed}
+                            title={`${vmwareTemplate.status.resourceUtilization.datastore.freeSpaceGB} GB Free / ${vmwareTemplate.status.resourceUtilization.datastore.capacityGB} GB Total`}
+                            variant={
+                              vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 90
+                                ? ProgressVariant.danger
+                                : vmwareTemplate.status.resourceUtilization.datastore.percentUsed > 75
+                                  ? ProgressVariant.warning
+                                  : undefined
+                            }
+                            measureLocation={ProgressMeasureLocation.outside}
+                          />
+                        </StackItem>
+                        <StackItem>
+                          <div style={{ marginBottom: '4px', fontSize: '13px', fontWeight: 500 }}>{t('CPU')}</div>
+                          <Progress
+                            value={vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed}
+                            title={`${vmwareTemplate.status.resourceUtilization.compute.cpuAvailableMhz} MHz Available / ${vmwareTemplate.status.resourceUtilization.compute.cpuTotalMhz} MHz Total`}
+                            variant={
+                              vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 90
+                                ? ProgressVariant.danger
+                                : vmwareTemplate.status.resourceUtilization.compute.cpuPercentUsed > 75
+                                  ? ProgressVariant.warning
+                                  : undefined
+                            }
+                            measureLocation={ProgressMeasureLocation.outside}
+                          />
+                        </StackItem>
+                        <StackItem>
+                          <div style={{ marginBottom: '4px', fontSize: '13px', fontWeight: 500 }}>{t('Memory')}</div>
+                          <Progress
+                            value={vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed}
+                            title={`${vmwareTemplate.status.resourceUtilization.compute.memoryAvailableMb} MB Available / ${vmwareTemplate.status.resourceUtilization.compute.memoryTotalMb} MB Total`}
+                            variant={
+                              vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 90
+                                ? ProgressVariant.danger
+                                : vmwareTemplate.status.resourceUtilization.compute.memoryPercentUsed > 75
+                                  ? ProgressVariant.warning
+                                  : undefined
+                            }
+                            measureLocation={ProgressMeasureLocation.outside}
+                          />
+                        </StackItem>
+                        <StackItem>
+                          <div style={{ fontSize: '13px', paddingTop: '4px' }}>
+                            <span style={{ fontWeight: 500 }}>{t('Estimated VM Capacity')}:</span>{' '}
+                            {vmwareTemplate.status.resourceUtilization.estimatedVMCapacity}
+                            {vmwareTemplate.spec?.vmTemplate?.resourceLimits?.maxVMs !== undefined &&
+                              ` / ${vmwareTemplate.spec.vmTemplate.resourceLimits.maxVMs} Max VMs`}
+                          </div>
+                        </StackItem>
+                      </Stack>
+                    </div>
+                  </StackItem>
+                )}
+                {vmwareTemplate && !vmwareTemplate.status?.resourceUtilization && (
+                  <StackItem>
+                    <Alert variant="info" isInline title={t('VMware resource utilization data is not yet available. The VMware controller will populate this information shortly.')} />
+                  </StackItem>
+                )}
                 {error && (
                   <StackItem>
                     <Alert variant="danger" title={error} isInline />
