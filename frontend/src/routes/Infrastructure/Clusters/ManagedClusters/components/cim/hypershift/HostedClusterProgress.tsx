@@ -1,0 +1,85 @@
+/* Copyright Contributors to the Open Cluster Management project */
+// Local copy from ui-lib
+import * as React from 'react';
+import {
+  ExpandableSectionToggle,
+  ProgressStep,
+  Spinner,
+  Stack,
+  StackItem,
+} from '@patternfly/react-core';
+import { global_palette_green_500 as okColor } from '@patternfly/react-tokens/dist/js/global_palette_green_500';
+import { CheckCircleIcon } from '@patternfly/react-icons/dist/js/icons/check-circle-icon';
+import { ExclamationCircleIcon } from '@patternfly/react-icons/dist/js/icons/exclamation-circle-icon';
+import { HostedClusterK8sResource } from '@openshift-assisted/ui-lib/cim';
+import { useTranslation } from '../../../../../../../lib/acm-i18next';
+import { ExternalLink, UiIcon } from '@openshift-assisted/ui-lib/common';
+import ConditionsTable from './ConditionsTable';
+
+type HostedClusterProgressProps = {
+  hostedCluster: HostedClusterK8sResource;
+  launchToOCP: (urlSuffix: string, newTab?: boolean) => void;
+};
+
+const HostedClusterProgress = ({ hostedCluster, launchToOCP }: HostedClusterProgressProps) => {
+  const { t } = useTranslation();
+  const [isExpanded, setExpanded] = React.useState(true);
+
+  const availableCondtion = hostedCluster.status?.conditions?.find((c) => c.type === 'Available');
+  const progressingCondtion = hostedCluster.status?.conditions?.find(
+    (c) => c.type === 'Progressing',
+  );
+
+  let progressIcon = <Spinner size="md" />;
+
+  if (progressingCondtion?.status === 'False') {
+    progressIcon =
+      availableCondtion?.status === 'True' ? (
+        <CheckCircleIcon color={okColor.value} />
+      ) : (
+        <UiIcon size="sm" status="danger" icon={<ExclamationCircleIcon />} />
+      );
+  }
+
+  return (
+    <ProgressStep icon={progressIcon}>
+      <Stack hasGutter>
+        <StackItem>
+          <ExpandableSectionToggle
+            isExpanded={isExpanded}
+            onToggle={setExpanded}
+            className="ai-progress-item__header"
+          >
+            {t('Control plane')}
+          </ExpandableSectionToggle>
+        </StackItem>
+        {isExpanded && (
+          <>
+            <StackItem className="ai-progress-item__body">
+              <ConditionsTable
+                conditions={hostedCluster.status?.conditions}
+                isDone={progressingCondtion?.status === 'False'}
+              />
+            </StackItem>
+            <StackItem className="ai-progress-item__body">
+              <ExternalLink
+                onClick={() =>
+                  launchToOCP(
+                    `k8s/ns/${hostedCluster.metadata?.namespace || ''}-${
+                      hostedCluster.metadata?.name || ''
+                    }/pods`,
+                    true,
+                  )
+                }
+              >
+                {t('Control plane pods')}
+              </ExternalLink>
+            </StackItem>
+          </>
+        )}
+      </Stack>
+    </ProgressStep>
+  );
+};
+
+export default HostedClusterProgress;

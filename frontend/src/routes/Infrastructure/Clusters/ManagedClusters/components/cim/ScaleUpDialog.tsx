@@ -10,7 +10,8 @@ import {
 } from '../../CreateCluster/components/assisted-installer/utils'
 import { useSharedAtoms, useRecoilValue } from '../../../../../../shared-recoil'
 import { IResource } from '../../../../../../resources'
-import { AgentK8sResource, ScaleUpModal } from '@openshift-assisted/ui-lib/cim'
+import { AgentK8sResource } from '@openshift-assisted/ui-lib/cim'
+import ScaleUpModal from './scaleup/ScaleUpModal'
 
 type ScaleUpDialogProps = {
   isOpen: boolean

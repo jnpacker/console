@@ -165,6 +165,8 @@ export function NodePoolForm(props: {
           label={t('Number of nodes')}
           id="nodepool-replicas"
           value={replicas}
+          min={0}
+          max={999999}
           onChange={(e: React.FormEvent<HTMLInputElement>) => {
             const newReplicas = Number((e.target as HTMLInputElement).value)
             if (newReplicas < 0) {
@@ -182,25 +184,8 @@ export function NodePoolForm(props: {
             }
           }}
           onPlus={() => {
-            // Calculate the max allowed replicas based on VMwareTemplate limits
-            let maxAllowed = replicas + 1
-            if (vmwareTemplate) {
-              const estimatedCapacity = vmwareTemplate.status?.resourceUtilization?.estimatedVMCapacity
-              const maxVMs = vmwareTemplate.spec.vmTemplate.resourceLimits?.maxVMs
-              const currentVMs = vmwareTemplate.status?.currentReplicas || 0
-
-              // Limit based on maxVMs (hard limit)
-              if (maxVMs !== undefined) {
-                const remainingCapacity = maxVMs - currentVMs
-                maxAllowed = Math.min(maxAllowed, replicas + remainingCapacity)
-              }
-
-              // Limit based on estimated capacity
-              if (estimatedCapacity !== undefined && estimatedCapacity > 0) {
-                maxAllowed = Math.min(maxAllowed, replicas + estimatedCapacity)
-              }
-            }
-            setReplicas(maxAllowed)
+            // REMOVED: Agent/VMware capacity check - allow unlimited PLUS clicks
+            setReplicas(replicas + 1)
           }}
           required
         />

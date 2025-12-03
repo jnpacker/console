@@ -1,6 +1,7 @@
 /* Copyright Contributors to the Open Cluster Management project */
 import { useClusterDetailsContext } from '../../ClusterDetails/ClusterDetails'
-import { ClusterInstallationProgress, ConfigMapK8sResource, getSupportedCM } from '@openshift-assisted/ui-lib/cim'
+import { ConfigMapK8sResource, getSupportedCM } from '@openshift-assisted/ui-lib/cim'
+import ClusterInstallationProgress from './hypershift/ClusterInstallationProgress'
 import { IResource } from '../../../../../../resources'
 import { createResource, deleteResource, getResource, patchResource } from '../../../../../../resources/utils'
 import { AcmExpandableCard } from '../../../../../../ui-components'
